@@ -1,0 +1,712 @@
+<!doctype html>
+<html lang="en">
+	<head>
+	    <meta charset="UTF-8">
+	    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+	    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+	    <title>Document</title>
+	    <script src="vue/vue.js"></script>		
+	    <link rel="stylesheet" href="vue/lib-master/theme-chalk/index.css">
+		<script src="vue/axios.min.js"></script>
+		<script src="vue/element/index.js"></script>
+		<script src="vue/qs.min.js"></script>
+	</head>
+	<body>
+    <style>
+        body{
+            margin:0px;
+        }
+        .el-header, .el-footer {
+            background-color: #B3C0D1;
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+  
+        .el-aside {
+            background-color: #f0f2f5;
+            color: #333;
+            text-align: center;
+            line-height: 80px;
+        }
+        .el-main {
+            background-color: #E9EEF3;
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+  
+        body > .el-container {
+            margin-bottom: 40px;
+        }
+  
+        .el-container:nth-child(5) .el-aside,
+        .el-container:nth-child(6) .el-aside {
+            line-height: 260px;
+        }
+        .el-container:nth-child(7) .el-aside {
+            line-height: 320px;
+        }
+        .el-table__header .el-table-column--selection .cell .el-checkbox:after {
+            color: #909399;
+            content: "全选";
+            font-size: 14px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        .el-upload-dragger{
+            background-color: #F0F2F5 !important;
+            border: 0px !important;
+        }
+    </style>
+    <div id="app">
+	    <el-button type="primary">GXTEST</el-button>
+	    <el-menu
+    	    :default-active="activeIndex2"
+    	    class="el-menu-demo"
+    	    mode="horizontal"
+    	    @select="handleSelect"
+    	    background-color="#447ED9"
+    	    text-color="#fff"
+    	    active-text-color="#ffd04b">
+    	    <el-menu-item index="#"><i class="el-icon-s-operation" style="color: white;font-size: 35px"></i></el-menu-item>
+    	    <el-menu-item index="1">首页</el-menu-item>
+    	    <el-menu-item index="2">提交测试</el-menu-item>
+    	    <el-menu-item index="3">历史任务</el-menu-item>
+	    </el-menu>
+
+	    <el-container>
+            <el-aside width="20%" style="margin-left: 78px;">
+<!--                 <el-upload
+                  class="upload-demo"
+                  drag
+                  action="string"
+                  :on-remove="handleRemove"
+                  :file-list="fileList"
+                  :on-exceed="handleExceed"
+                  :http-request="doassemblepm"
+                  multiple>
+                  <i class="el-icon-upload"></i>
+                  <div class="el-upload__text">将提测包拖到此处，或<em>点击上传</em></div>
+                </el-upload> -->
+                <el-upload
+                    class="upload-demo"
+                    action="string"
+                    :on-remove="handleRemove"
+                    multiple
+                    drag
+                    :file-list="fileList"
+                    :on-exceed="handleExceed"
+                    style='line-height: 150px'
+                    :http-request="doassemblepm">
+                    <el-button size="small" type="primary">上传提测包</el-button>
+                </el-upload>
+            </el-aside>
+            <el-main>
+                <div style="float: left;font-size: 13px">选择测试平台</div>
+                <div>
+                    <el-select 
+                    v-model="platformvalue" 
+                    placeholder="请选择" 
+                    style="margin-right: 53%"
+                    @change="showtypeAtotal(platformvalue)">
+                    <el-option
+                    v-for="item in platformselect"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
+                    </el-option>
+                    </el-select>
+                </div>
+                <span style="float: left;font-size: 13px">配置测试资源数量</span>
+                <span style="float: left;margin-left: 20px">
+                    <el-input v-model="testinput" style="width: 250px" :placeholder="total"></el-input>
+                </span>
+            </el-main>
+            <el-aside width="20%" style="margin-right: 157px;">
+                <div style="text-align: center;line-height: 113px;margin-bottom: -45px">{{type}}平台</div>
+                <div style="text-align: center;font-size: 25px"><b>{{used}}/{{total}}</b></div>
+            </el-aside>
+        </el-container>
+<br>
+
+        <div style="margin-left: 78px;margin-right:157px;height: 100px">
+            <div style="width: 25%;float: left;height: 100px">
+                <b>筛选测试用例</b> <br><br>
+            <div style="font-size: 12px">测试项目： 
+              <el-select 
+              v-model="testproject" 
+              placeholder="请选择" 
+              style="margin-right: -170px;height: 20px" 
+              @change="getteststandard(testproject);
+                ">
+                  <el-option
+                    v-for="item in testprojectselet"
+                    :key="item.label"
+                    :label="item.label"
+                    :value="item.label">
+                  </el-option>
+                </el-select>
+          </div>
+<br>
+          <div  style="font-size: 12px">测试标准：
+              <el-select 
+              v-model="teststandard" 
+              placeholder="请选择" 
+              style="margin-right: -170px;height: 20px" 
+              @change="getcorpusbatch(testproject,teststandard);
+              ">
+                  <el-option
+                    v-for="item in teststandardselect"
+                    :key="item.label"
+                    :label="item.label"
+                    :value="item.label">
+                  </el-option>
+                </el-select>
+          </div>
+  <br>
+          <div  style="font-size: 12px">语料转录批次：
+              <el-select 
+              v-model="corpusbatch" 
+              placeholder="请选择" 
+              style="margin-right: -170px;height: 20px"
+              @change="getkey_filter(testproject,teststandard,corpusbatch,testscene);
+              gettestscene(testproject,teststandard,corpusbatch)">
+                  <el-option
+                    v-for="item in corpusbatchselect"
+                    :key="item.label"
+                    :label="item.label"
+                    :value="item.label">
+                  </el-option>
+                </el-select>
+          </div>
+<br><br>
+        <div>
+          测试场景： <br><br> 
+            <el-select 
+            v-model="testscene" 
+            multiple 
+            placeholder="请选择"
+            @change="getkey_filter(testproject,teststandard,corpusbatch,testscene);">
+              <el-option
+                v-for="item in testsceneselect"
+                :key="item.label"
+                :label="item.label"
+                :value="item.label">
+              </el-option>
+            </el-select> 
+        </div>  
+        </div>
+        <div style="float: left;border: 1px solid #DCDFE6">
+        <div style="margin-left: 10px;">
+            <el-checkbox @change="toggleSelection()" style="color: #909399;font-weight:bold;">反选</el-checkbox>
+        </div>
+        <el-table
+            ref="multipleTable"
+            :data="Wakeupwordlist"
+            tooltip-effect="dark"
+            stripe
+            @selection-change="handleSelectionChange">
+            <el-table-column
+                type="selection"
+                width="120"
+                width="55">
+            </el-table-column>
+            <el-table-column
+                label="唤醒词列表"
+                width="200"
+                prop="list">
+            </el-table-column>
+        </el-table>
+        </div>
+
+
+        <div style="width: 7%"></div>
+        <div style="width: 40%;float: right;height: 100px">
+        <div><b><i class="el-icon-s-home"></i>已选择语料</b></div>
+<br>
+        <div style="float: left;">
+            <el-checkbox v-model="checkAll" @change="handleCheckAllChange">全选</el-checkbox>
+        </div>
+    <!-- <div ><el-checkbox @change="toggleylSelection()">反选</el-checkbox></div> -->
+<br>
+        <div style="border: 1px solid #DCDFE6">
+            <div style="height: 35px">测试场景</div>
+            <el-tree
+              :data="keydata"
+              show-checkbox
+              default-expand-all
+              node-key="label"
+              ref="tree"
+              highlight-current
+              :props="defaultProps"
+              @check="getnodelist">
+            </el-tree>
+        </div>
+<br>
+        <div>
+            <el-button type="primary" @click="testupload(platformvalue,testinput)" :disabled="isDisabled">提交测试</el-button>
+        </div>
+        </div>
+        </div>
+    </div>
+
+
+<script type="text/javascript">
+        	var app = new Vue({
+                el:"#app",
+                data:{
+                    isDisabled:false,
+                    testinput:'',
+                    testproject:'',
+                    testprojectselet:[],
+                    teststandardselect:[],
+                    teststandard:'',
+                    corpusbatch:'',
+                    corpusbatchselect:[],
+                    testsceneselect:[],
+                    testscene:[],
+                    platformselect:[],
+                    platformvalue:'',
+                    checkAll: false,
+                    Wakeupwordlist:[],
+                    type:'',
+                    used:0,
+                    total:0,
+                    keydata:[],
+                    seinfo:[],
+                    // children和label 与接口字段保持一致
+                    defaultProps: {
+                        children: 'children',
+                        label: 'label'
+                    },
+                    fileList: [],
+                    activeIndex: '1',
+                	activeIndex2: '2',
+                    multipleSelection: [],
+                    yldata:[],
+                    platforminfo:[],
+                    filepath:'',
+                    config_path:'',
+                    test_scenario:[],
+                    fxinfo:[],
+                    url:'',
+                    email:'',
+                },
+                methods: {
+                    geturl()
+                    {
+                        var host = location.host;
+                        this.url ="http://"+host;
+                    },
+                    getnodelist(k,v)
+                    {
+                        var cn = v.checkedNodes;
+                        var show = [];
+                        var index = 0;
+                        for (i = 0; i < cn.length; i++) {
+                            let ddd={};
+                            var str = cn[i]['id'].split('/');
+                            if(str.length > 1)
+                            {
+                                ddd = cn[i]['id'];
+                                show[index]=ddd;
+                                index++;
+                            }
+                        }
+                        this.test_scenario = show;
+                    },
+                    testupload(platformvalue,testinput)
+                    {
+                        this.isDisabled = true;
+                        setTimeout(()=>{
+                            this.isDisabled = false;
+                        },2000)
+                        let t = this;
+                        let data = {};
+                        if(this.filepath == '')
+                        {
+                            t.alertmes('未上传提测包','error');
+                            return;
+                        }
+                        if(platformvalue == '')
+                        {
+                            t.alertmes('未选择测试平台','error');
+                            return;
+                        }
+                        if( this.test_scenario.length == 0)
+                        {
+                            t.alertmes('未选择测试用例','error');
+                            return;
+                        }
+                        data.project = this.testproject;
+                        data.test_standard = this.teststandard;
+                        data.record_batch = this.corpusbatch;
+                        data.file_path = this.filepath;
+                        data.config_path = this.config_path;
+                        data.test_platform = platformvalue;
+                        data.test_devices = this.testinput;
+                        data.wav_list = this.test_scenario;
+                        data.email = this.email;
+                        let url = t.url+'/v1/test_upload';
+                        axios.post(url, data)
+                            .then(function (response) {
+                                 t.alertmes(response.data.msg,'success');
+                                // console.log(response);return;
+                            })
+                            .catch(function (error) {
+                                console.log(error);
+                        });
+                    },
+                    alertmes(mes,colo) {
+                        this.$message({
+                            message: mes,
+                            type: colo
+                        });
+                    },
+                    doassemblepm(param,type)
+                    {
+                        this.fileList = [{name:param.file.name,url:''}];
+                        const formData = new FormData();
+                        let th = this;
+                        formData.append('file', param.file)
+                        // console.log(param);
+                        let url = th.url+'/v1/upload_tar';
+                        axios.post(url, formData)
+                            .then(function (response) {
+                                th.filepath = response.data.data.path;
+                                th.alertmes(response.data.msg,'success');
+                            })
+                            .catch(function (error) {
+                                console.log(error);
+                        });
+                    },
+                    showtypeAtotal(pl)
+                    {
+                        let th = this;
+                        for (i = 0; i < this.platforminfo.length; i++) {
+                            if(this.platforminfo[i]['type'] == pl)
+                            {
+                                th.type = this.platforminfo[i]['type'];
+                                th.used = this.platforminfo[i]['used'];
+                                th.total = this.platforminfo[i]['total'];
+                            }
+                        }
+                        th.gettestproject();
+                    },
+                    showplatform()
+                    {
+                        let th = this;
+                        let url = th.url+'/v1/test_platform';
+                        axios.get(url)
+                            .then(function(res){
+                                var info = res.data.data;
+                                th.platforminfo = info;
+                                var show = [];
+                                for (i = 0; i < info.length; i++) {
+                                    let ddd={};
+                                    ddd.value = info[i]['type'];
+                                    ddd.label = info[i]['type'];
+                                    show[i]=ddd;
+                                }
+                            th.platformselect = show;
+                            })
+                    },
+                    getkey_filter(pr,st,ba,sc)
+                    {
+                        let th = this;
+                        let test_platform = th.platformvalue;
+                        this.Wakeupwordlist = [];
+                        if(pr != '' && st != '' && ba != '')
+                        {
+                            let th = this;
+                            let url = th.url+'/v1/key_filter';
+                            axios.get(url, {
+                                params: {
+                                    project: pr,
+                                    test_standard:st,
+                                    record_batch:ba,
+                                    test_scene:sc,
+                                    test_platform:test_platform
+                                }
+                            })
+                            .then(function (response) {
+                              var info = response.data.data.key_list;
+                              if(info.length == 0)
+                              {
+                                   th.multipleSelection = [];
+                              }
+                              var show = [];
+                              for (i = 0; i < info.length; i++) {
+                                  let ddd={};
+                                  ddd.list = info[i];
+                                  show[i]=ddd;
+                              }
+                                // console.log(show);return;
+                                th.Wakeupwordlist = show;
+                            })
+                            .catch(function (error) {
+                                console.log(error);
+                            });
+                        }
+                    },
+                    handleCheckAllChange(val) 
+                    {
+                        if (this.checkAll) {
+                            this.$refs.tree.setCheckedNodes(this.keydata);
+                            var cn = this.$refs.tree.getCheckedNodes();
+                            var show = [];
+                            var index = 0;
+                            for (i = 0; i < cn.length; i++) {
+                                let ddd={};
+                                var str = cn[i]['id'].split('/');
+                                if(str.length > 1)
+                                {
+                                    ddd = cn[i]['id'];
+                                    show[index]=ddd;
+                                    index++;
+                                }
+                            }
+                            this.test_scenario = show;
+                            // this.yldata = this.keydata;
+
+                        } else {
+                            this.$refs.tree.setCheckedKeys([]);
+                        }
+                    },
+                    // toggleylSelection(){
+                    //   // console.log(this.$refs.tree);
+                    //   return;
+                    //   this.yldata = this.data;
+                    //   this.data.forEach((element)=>{
+                    //       if(this.yldata.indexOf(element)>=0)
+                    //       {
+                    //         // console.log(this.$refs.tree);return;
+                    //           this.$refs.tree.setCheckedNodes(element,false);
+                    //       }else{
+                    //           this.$refs.tree.setCheckedNodes(element,true);
+                    //       }
+                    //   })
+
+                    // },
+                    toggleSelection() {
+                        // console.log(this.Wakeupwordlist);
+                        var i=0;
+                        this.Wakeupwordlist.forEach((element)=>{
+                            if(this.multipleSelection.indexOf(element)>=0)
+                            {
+                                this.$refs.multipleTable.toggleRowSelection(element,false);
+                            }else{
+                                this.fxinfo[i] = element;
+                                i++;
+                                this.$refs.multipleTable.toggleRowSelection(element,true);
+                            }
+                        })
+                    },
+                    handleSelectionChange(val) 
+                    {
+                        this.multipleSelection = val;
+                        var keywords =[];
+                        for (i = 0; i < this.multipleSelection.length; i++) {
+                            keywords[i]=this.multipleSelection[i]['list'];
+                        }
+                        // console.log(keywords);
+                        let th = this;
+                        let test_platform = th.platformvalue;
+                        if(th.testproject != '' && th.teststandard != '' && th.corpusbatch != '' && keywords.length != 0 && th.platformvalue != '')
+                        {
+                            let url = th.url+'/v1/wav_filter';
+                            axios.get(url, {
+                            params: {
+                                project: th.testproject,
+                                test_standard:th.teststandard,
+                                record_batch:th.corpusbatch,
+                                test_scene:th.testscene,
+                                keyword:keywords,
+                                test_platform:test_platform
+                            }
+                            })
+                            .then(function (response) {
+                            // console.log(response);return;
+                            var info = response.data.data.wav_list;
+                            var show = [];
+                            for (i = 0; i < info.length; i++) {
+                                var c = [];
+                                let ddd={};
+                                
+                                ddd.id = info[i]['scene'];
+                                ddd.label = info[i]['scene'];
+                                for(j=0;j<info[i]['wav_list'].length;j++)
+                                {
+                                    let children = {};
+                                    children.id = info[i]['wav_list'][j];
+                                    var str = info[i]['wav_list'][j].split('/');
+                                    var num = str.length-1;
+                                    children.label = str[num];
+                                    c[j] = children; 
+                                }
+                                ddd.children = c;
+                                show[i]=ddd;
+                            }
+                            th.keydata = show;
+                            })
+                            .catch(function (error) {
+                                console.log(error);
+                            });
+                        }
+                    },
+                    handleRemove(file, fileList) {
+                        this.filepath = '';
+                        console.log(file, fileList);
+                    },
+                    handlePreview(file) {
+                        console.log(file);return;
+                    },
+                    handleExceed(files, fileList) {
+                        this.$message.warning(`当前限制选择 3 个文件，本次选择了 ${files.length} 个文件，共选择了 ${files.length + fileList.length} 个文件`);
+                    },
+                    beforeRemove(file, fileList) {
+                        return this.$confirm(`确定移除 ${ file.name }？`);
+                    },
+                	handleSelect(key, keyPath) {
+                        window.open(key+".html",'_self');
+                	},
+              		gettestproject()
+              		{
+                        let th = this;
+                        let test_platform = th.platformvalue;
+                        if(test_platform != '')
+                        {
+                            let url = th.url+'/v1/get_project';
+                            axios.get(url, {
+                                params: {
+                                test_platform:test_platform,
+                                }
+                            })
+                            .then(function (res) {
+                                var info = res.data.data;
+                                var show = [];
+                                for (i = 0; i < info.length; i++) {
+                                    let ddd={};
+                                    ddd.value = i;
+                                    ddd.label = info[i];
+                                    show[i]=ddd;
+                                }
+                                th.testprojectselet = show;
+                            })
+                            .catch(function (error) {
+                                console.log(error);
+                            });
+                        }
+              		},
+              		getteststandard(pr)
+              		{
+                        let th = this;
+                        let test_platform = th.platformvalue;
+                        th.teststandard = '';
+                        th.teststandardselect = [];
+                        th.corpusbatch = '';
+                        th.corpusbatchselect = [];
+                        th.testscene = '';
+                        th.testsceneselect = [];
+                        th.Wakeupwordlist = [];
+                        let url = th.url+'/v1/get_standard';
+                        axios.get(url, {
+                            params: {
+                            project: pr,
+                            test_platform:test_platform,
+                            }
+                        })
+                        .then(function (response) {
+                            var info = response.data.data;
+                            var show = [];
+                            for (i = 0; i < info.length; i++) {
+                                let ddd={};
+                                ddd.value = i;
+                                ddd.label = info[i];
+                                show[i]=ddd;
+                        }
+                        th.teststandardselect = show;
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+              		},
+              		getcorpusbatch(pr,st)
+              		{
+                        let th = this;
+                        let test_platform = th.platformvalue; 
+                        th.corpusbatch = '';
+                        th.corpusbatchselect = [];
+                        th.testscene = '';
+                        th.testsceneselect = [];
+                        th.Wakeupwordlist = [];
+                        let url = th.url+'/v1/get_batch';
+                        axios.get(url, {
+                            params: {
+                                project: pr,
+                                standard:st,
+                                test_platform:test_platform
+                            }
+                        })
+                        .then(function (response) {
+                            var info = response.data.data;
+                            var show = [];
+                            for (i = 0; i < info.length; i++) {
+                                let ddd={};
+                                ddd.value = i;
+                                ddd.label = info[i];
+                                show[i]=ddd;
+                            }
+                        th.corpusbatchselect = show;
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+              		},
+                    gettestscene(pr,st,ba)
+                    {
+                        let th = this;
+                        let test_platform = th.platformvalue;
+                        th.testscene = '';
+                        th.testsceneselect = [];
+                        th.Wakeupwordlist = [];
+                        let url = th.url+'/v1/get_scene';
+                        axios.get(url, {
+                            params: {
+                                project: pr,
+                                standard:st,
+                                batch:ba,
+                                test_platform:test_platform,
+                            }
+                        })
+                        .then(function (response) {
+                            var info = response.data.data;
+                            var show = [];
+                            for (i = 0; i < info.length; i++) {
+                                let ddd={};
+                                ddd.value = i;
+                                ddd.label = info[i];
+                                show[i]=ddd;
+                            }
+                        th.testsceneselect = show;
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                    },
+              		handleSizeChange(val) {
+                		console.log(`每页 ${val} 条`);
+              		},
+              		handleCurrentChange(val) {
+                		console.log(`当前页: ${val}`);
+              		}
+            	},
+            	created:function(){
+                    this.geturl();
+                    this.showplatform();
+                },
+            })
+</script>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+	<head>
+	    <meta charset="UTF-8">
+	    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+	    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+	    <title>Document</title>
+        <link rel="stylesheet" href="vue/lib-master/theme-chalk/index.css">
+	    <script src="vue/vue.js"></script>		
+		<script src="vue/axios.min.js"></script>
+		<script src="vue/element/index.js"></script>
+		<script src="vue/qs.min.js"></script>
+	</head>
+	<body>
+    <style type="text/css">
+        body{
+            margin:0px;
+        }
+        .grid-content {
+            border-radius: 4px;
+            min-height: 36px;
+        }
+        .bg-purple-dark {
+	        background: #99a9bf;
+        }
+	    .el-header, .el-footer {
+            background-color: #B3C0D1;
+            color: #333;
+            text-align: center;
+            line-height: 60px;
+        }
+        .el-aside {
+            background-color: #D3DCE6;
+            color: #333;
+            text-align: center;
+            line-height: 40px;
+            width: 420px !important;
+            margin-right: 157px;
+        }
+        .el-main {
+            /*background-color: #E9EEF3;*/
+            color: #333;
+            text-align: center;
+            line-height: 40px;
+            margin-left: 78px;
+        }
+  
+        body > .el-container {
+            margin-bottom: 40px;
+        }
+        .el-container:nth-child(5) .el-aside,
+        .el-container:nth-child(6) .el-aside {
+            line-height: 260px;
+        }
+  
+        .el-container:nth-child(7) .el-aside {
+            line-height: 320px;
+        }
+        .el-tree-node:focus > .el-tree-node__content {
+            background-color: #66b1ff87 !important;
+        }
+        .el-tree-node__content:hover {
+            background-color: #66b1ff87;
+        }
+        .el-tree--highlight-current .el-tree-node.is-current>.el-tree-node__content {
+            background-color: #66b1ff87;
+        }
+        .el-tree>.el-tree-node>.el-tree-node__content{
+            font-weight:bold !important;
+        }
+        .el-table__body tr.current-row>td{
+          background-color: #69A8EA !important;
+          color: #fff;
+        }
+    </style>
+
+
+    <div id="app">
+	    <el-button type="primary">GXTEST</el-button>
+	    <el-menu
+	        :default-active="activeIndex2"
+	        class="el-menu-demo"
+	        mode="horizontal"
+	        @select="handleSelect"
+	        background-color="#447ED9"
+	        text-color="#fff"
+	        active-text-color="#ffd04b">
+	    <el-menu-item index="#"><i class="el-icon-s-operation" style="color: white;font-size: 35px"></i></el-menu-item>
+	    <el-menu-item index="1">首页</el-menu-item>
+	    <el-menu-item index="2">提交测试</el-menu-item>
+	    <el-menu-item index="3">历史任务</el-menu-item>
+	    </el-menu>
+
+ 
+        <div style="height: 50px;width: 87%;margin-left: 78px;margin-top:3px;font-size: 22px;line-height: 45px;color: #666"> 测试任务筛选</div>
+
+        <div  style="height: 65px;width: 87%;margin-left: 78px;margin-top:3px;background-color: #f0f2f5;font-size: 14px;line-height: 45px;color: #666">
+        <div style="margin-left: 20px;float: left;margin-top: 10px;">测试项目：
+            <el-select 
+                v-model="projectvalue"
+                placeholder="请选择"
+                @change="showsearchlist(projectvalue,platformvalue)">
+                <el-option
+                v-for="item in testprojectselet"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+                </el-option>
+            </el-select>
+        </div>
+        <div style="width: 75%;float: right;margin-top: 10px">测试平台：
+            <el-select
+                v-model="platformvalue"
+                placeholder="请选择"
+                @change="showsearchlist(projectvalue,platformvalue)">
+                <el-option
+                v-for="item in platformselect"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value">
+                </el-option>
+            </el-select>
+        </div>
+        </div>
+        <el-container>
+        	<el-main>
+                <div style="float: left;"><i class="el-icon-s-order"></i>任务列表</div>
+        		<el-table
+                :data="tableData"
+                height="500"
+                border
+                stripe
+                style="width: 100%;"
+                highlight-current-row
+                @row-click="showdetail"
+                :header-cell-style="{color:'#333333',fontWeight:'bold'}">
+                <el-table-column
+                    prop="index"
+                    label="编号"
+                    width="130">
+                    <template slot-scope="scope">
+                        <span v-html="scope.row.index+1"></span>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                    prop="project"
+                    label="项目"
+                    width="130">
+                </el-table-column>
+                <el-table-column
+                    prop="test_platform"
+                    label="测试平台"
+                    width="130">
+                </el-table-column>
+                <el-table-column
+                    prop="upload_time"
+                    label="提测时间">
+                </el-table-column>
+                <el-table-column
+                    prop="test_package"
+                    label="提测包">
+                </el-table-column>
+                <el-table-column
+                    prop="test_state"
+                    label="测试状态">
+                </el-table-column>
+                <el-table-column
+                    prop="test_percent"
+                    label="测试进度">
+                    <template slot-scope="scope">
+                        <el-progress :percentage="parseFloat(scope.row.test_percent)"></el-progress>
+                    </template>
+                </el-table-column>
+                <el-table-column
+                    prop="test_device"
+                    label="测试执行时间">
+                </el-table-column>
+            	</el-table>
+            	<el-pagination
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    :current-page="currentPage"
+                    :page-sizes="[20, 40, 60, 80]"
+                    :page-size="10"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="all_task">
+                </el-pagination>
+        	</el-main>
+            <div style="width: 35%;margin-top: 35px">
+                <div style="margin-right: 157px">
+                <div style="height: 35px"><i class="el-icon-document"></i>任务详情</div>
+                    <el-tree 
+                        :data="TaskXi" 
+                        :props="defaultProps" 
+                        node-key="label" 
+                        @node-click="handleNodeClick" 
+                        :highlight-current = "true">
+                    </el-tree>  
+                </div>
+                <br>
+                <div>
+                    <div v-if = "showreport == true">
+                        <el-button type="primary" @click="showresult()">查看报告</el-button>
+                    </div>
+                    <div v-else >
+                        <el-button type="primary" @click="showresult()" disabled>查看报告</el-button>
+                    </div>
+                </div>
+            </div>
+        </el-container> 
+    </div>
+
+
+<script type="text/javascript">
+	var app = new Vue({
+        el:"#app",
+        data:{
+            projectvalue:'',
+            testprojectselet:[],
+            platformvalue:'',
+            platformselect:[],
+            TaskXi: [],
+            tableData:[],
+            activeIndex: '1',
+        	activeIndex2: '3',
+	        testnum:0,
+	        testplatform:0,
+	        testempty:0,
+        	currentPage: 1,
+            defaultProps: {
+                children: 'children',
+                label: 'label'
+            },
+            task_id:'',
+            result_addr:'',
+            all_task:0,
+            Current:20,
+            Size:1,
+            url:'',
+            showreport:false,
+        },
+        methods: {
+            geturl()
+            {
+                var host = location.host;
+                this.url ="http://"+host;
+            },
+            showresult()
+            {
+                if(this.result_addr != '')
+                {
+                    window.open(this.result_addr);
+                } 
+            },
+            showdetail(val)
+            {
+                this.showreport =true;
+                this.task_id = val.id;
+                var host = location.host;
+                var ua = host.split(':');
+                if(ua.length > 1)
+                {
+                    host = ua[0];
+                }
+                var uri_addr = "http://"+host;
+                this.result_addr = uri_addr+val.result_addr;
+                let th = this;
+                let url = th.url+'/v1/test_info';
+                axios.get(url, {
+                    params: {
+                        task_id: val.id,
+                    }
+                })
+                .then(function (response) {
+                    var info = response.data.data.wav_list;
+                    var show = [];
+                    for (i = 0; i < info.length; i++) {
+                        var c = [];
+                        let ddd={};
+                          
+                        ddd.label = info[i]['scene'];
+                        for(j=0;j<info[i]['wav_list'].length;j++)
+                        {
+                            let children = {};
+                            children.label = info[i]['wav_list'][j];
+                            c[j] = children; 
+                        }
+                        ddd.children = c;
+                        show[i]=ddd;
+                    }
+                    th.TaskXi = show;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+            showsearchlist(pr,pl)
+            {
+                let th = this;
+                let url = th.url+'/v1/test_filter';
+                axios.get(url, {
+                    params: {
+                        project: pr,
+                        test_platform:pl
+                    }
+                })
+                .then(function (response) {
+                    th.tableData = response.data.data;
+
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+            },
+            handleNodeClick(data) {
+                console.log(data);
+            },
+            showplatform()
+            {
+                let th = this;
+                let url = th.url+'/v1/test_platform';
+                axios.get(url)
+                    .then(function(res){
+                        var info = res.data.data;
+                        th.platforminfo = info;
+                        var show = [];
+                        for (i = 0; i < info.length; i++) {
+                            let ddd={};
+                            ddd.value = info[i]['type'];
+                            ddd.label = info[i]['type'];
+                            show[i]=ddd;
+                        }
+                    th.platformselect = show;
+                })
+            },
+            gettestproject()
+            {
+                let th = this;
+                let url = th.url+'/v1/get_project';
+                axios.get(url)
+                    .then(function(res){
+                        var info = res.data.data;
+                        var show = [];
+                        for (i = 0; i < info.length; i++) {
+                            let ddd={};
+                            ddd.value = i;
+                            ddd.label = info[i];
+                            show[i]=ddd;
+                        }
+                        th.testprojectselet = show;
+                })
+            },
+      		handleSelect(key, keyPath) {
+        	    window.open(key+".html",'_self');
+      		},
+      		gettestlist()
+      		{
+                let th = this;
+                let url = th.url+'/v1/history_list';
+                axios.get(url, {
+                    params: {
+                        page: th.Size,
+                        per_page_num:th.Current
+                    }
+                })
+                .then(function (response) {
+                    th.all_task = response.data.all_task;
+                    th.tableData = response.data.data;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+      		},
+      		handleSizeChange(val) 
+            {
+            // console.log(`每页 ${val} 条`);
+                this.Current = val;
+                let th = this;
+                let url = th.url+'/v1/history_list';
+                axios.get(url, {
+                    params: {
+                        page: th.Size,
+                        per_page_num:val
+                    }
+                })
+                .then(function (response) {
+                    th.all_task = response.data.all_task;
+                    th.tableData = response.data.data;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+      		},
+      		handleCurrentChange(val) {
+            // console.log(`当前页: ${val}`);
+                this.Size =val;
+                let th = this;
+                let url = th.url+'/v1/history_list';
+                axios.get(url, {
+                    params: {
+                        page: val,
+                        per_page_num:th.Current
+                    }
+                })
+                .then(function (response) {
+                    th.all_task = response.data.all_task;
+                    th.tableData = response.data.data;
+                })
+                .catch(function (error) {
+                    console.log(error);
+                });
+      		}
+    	},
+    	created:function(){
+            this.geturl();
+            this.gettestproject();
+            this.showplatform();
+            this.gettestlist();
+        },
+    })
+</script>
+	</body>
+</html>
